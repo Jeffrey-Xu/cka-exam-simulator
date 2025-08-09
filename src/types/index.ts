@@ -101,7 +101,7 @@ export interface TerminalSession {
 }
 
 export interface TerminalMessage {
-  type: 'input' | 'output' | 'error' | 'system'
+  type: 'terminal-input' | 'terminal-output' | 'terminal-error' | 'terminal-system' | 'input' | 'output' | 'error' | 'system'
   data: string
   timestamp: Date
   sessionId: string
