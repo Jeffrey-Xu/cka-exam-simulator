@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Terminal as XTerm } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
@@ -15,6 +15,9 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
   const terminalRef = useRef<HTMLDivElement>(null)
   const xtermRef = useRef<XTerm | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
+  const wsRef = useRef<WebSocket | null>(null)
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting')
+  const currentCommandRef = useRef<string>('')
 
   useEffect(() => {
     if (!terminalRef.current) return
@@ -67,8 +70,8 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
     xtermRef.current = terminal
     fitAddonRef.current = fitAddon
 
-    // Show welcome message
-    showWelcomeMessage(terminal)
+    // Connect to WebSocket
+    connectWebSocket(terminal)
 
     // Handle input
     terminal.onData((data) => {
@@ -83,18 +86,94 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
 
     return () => {
       window.removeEventListener('resize', handleResize)
+      if (wsRef.current) {
+        wsRef.current.close()
+      }
       terminal.dispose()
     }
   }, [sessionId])
+
+  const connectWebSocket = (terminal: XTerm) => {
+    const wsUrl = 'ws://34.201.132.19:3001'
+    
+    try {
+      const ws = new WebSocket(wsUrl)
+      wsRef.current = ws
+
+      ws.onopen = () => {
+        console.log('WebSocket connected to SSH proxy')
+        setConnectionStatus('connected')
+        showWelcomeMessage(terminal)
+      }
+
+      ws.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data)
+          handleWebSocketMessage(terminal, message)
+        } catch (error) {
+          console.error('Failed to parse WebSocket message:', error)
+        }
+      }
+
+      ws.onclose = () => {
+        console.log('WebSocket disconnected')
+        setConnectionStatus('disconnected')
+        terminal.writeln('\r\n\x1b[31m[Connection lost - attempting to reconnect...]\x1b[0m')
+        
+        // Attempt to reconnect after 3 seconds
+        setTimeout(() => {
+          if (xtermRef.current) {
+            connectWebSocket(xtermRef.current)
+          }
+        }, 3000)
+      }
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error)
+        setConnectionStatus('error')
+        terminal.writeln('\r\n\x1b[31m[Connection error - check network connection]\x1b[0m')
+      }
+
+    } catch (error) {
+      console.error('Failed to create WebSocket connection:', error)
+      setConnectionStatus('error')
+      terminal.writeln('\x1b[31m[Failed to connect to SSH proxy server]\x1b[0m')
+    }
+  }
+
+  const handleWebSocketMessage = (terminal: XTerm, message: any) => {
+    switch (message.type) {
+      case 'system':
+        terminal.writeln(`\x1b[36m[${message.data}]\x1b[0m`)
+        break
+      case 'output':
+        if (message.data) {
+          const lines = message.data.split('\n')
+          lines.forEach((line: string) => {
+            terminal.writeln(line)
+          })
+        }
+        break
+      case 'error':
+        terminal.writeln(`\x1b[31m${message.data}\x1b[0m`)
+        break
+      case 'command-complete':
+        terminal.write('\x1b[36mubuntu@master01\x1b[0m:\x1b[34m~\x1b[0m$ ')
+        break
+      default:
+        console.log('Unknown message type:', message.type)
+    }
+  }
 
   const showWelcomeMessage = (terminal: XTerm) => {
     terminal.writeln('\x1b[32m╭─────────────────────────────────────────────────────────────╮\x1b[0m')
     terminal.writeln('\x1b[32m│                 CKA Exam Simulator v2.0                    │\x1b[0m')
     terminal.writeln('\x1b[32m│                                                             │\x1b[0m')
-    terminal.writeln('\x1b[32m│  🚀 Connected to Kubernetes Cluster                        │\x1b[0m')
-    terminal.writeln('\x1b[32m│  📡 Real kubectl commands available                        │\x1b[0m')
+    terminal.writeln('\x1b[32m│  🚀 Connected to Real Kubernetes Cluster                   │\x1b[0m')
+    terminal.writeln('\x1b[32m│  📡 Live kubectl commands via SSH proxy                    │\x1b[0m')
     terminal.writeln('\x1b[32m│                                                             │\x1b[0m')
     terminal.writeln('\x1b[32m│  Master: 100.27.28.215 | Worker: 54.145.132.72            │\x1b[0m')
+    terminal.writeln('\x1b[32m│  Proxy: 34.201.132.19:3001                                 │\x1b[0m')
     terminal.writeln('\x1b[32m│                                                             │\x1b[0m')
     terminal.writeln('\x1b[32m│  Type kubectl commands to interact with the cluster       │\x1b[0m')
     terminal.writeln('\x1b[32m│  Example: kubectl get nodes                                │\x1b[0m')
@@ -103,77 +182,68 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
     terminal.write('\x1b[36mubuntu@master01\x1b[0m:\x1b[34m~\x1b[0m$ ')
   }
 
-  const handleInput = async (terminal: XTerm, data: string) => {
+  const handleInput = (terminal: XTerm, data: string) => {
     const code = data.charCodeAt(0)
 
     if (code === 13) { // Enter key
       terminal.writeln('')
       
-      // Get the current line (simple implementation)
-      const command = getCurrentCommand()
-      if (command.trim()) {
+      const command = currentCommandRef.current.trim()
+      if (command && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         onCommand?.(command)
-        await executeCommand(terminal, command.trim())
+        
+        // Send command to WebSocket server
+        wsRef.current.send(JSON.stringify({
+          type: 'command',
+          command: command,
+          sessionId: sessionId,
+          timestamp: new Date().toISOString()
+        }))
+      } else if (command) {
+        terminal.writeln('\x1b[31mNot connected to SSH proxy server\x1b[0m')
+        terminal.write('\x1b[36mubuntu@master01\x1b[0m:\x1b[34m~\x1b[0m$ ')
+      } else {
+        terminal.write('\x1b[36mubuntu@master01\x1b[0m:\x1b[34m~\x1b[0m$ ')
       }
       
-      terminal.write('\x1b[36mubuntu@master01\x1b[0m:\x1b[34m~\x1b[0m$ ')
+      currentCommandRef.current = ''
     } else if (code === 127) { // Backspace
-      terminal.write('\b \b')
+      if (currentCommandRef.current.length > 0) {
+        currentCommandRef.current = currentCommandRef.current.slice(0, -1)
+        terminal.write('\b \b')
+      }
     } else if (code >= 32 && code <= 126) { // Printable characters
+      currentCommandRef.current += data
       terminal.write(data)
     }
   }
 
-  const getCurrentCommand = (): string => {
-    // This is a simplified implementation
-    // In a real implementation, you'd track the current command being typed
-    return 'kubectl get nodes' // Placeholder
-  }
-
-  const executeCommand = async (terminal: XTerm, command: string) => {
-    if (!command.startsWith('kubectl ')) {
-      terminal.writeln(`\x1b[31mOnly kubectl commands are supported\x1b[0m`)
-      return
-    }
-
-    try {
-      terminal.writeln(`\x1b[33mExecuting: ${command}\x1b[0m`)
-      
-      const response = await fetch('/api/terminal/ws', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          command,
-          sessionId,
-        }),
-      })
-
-      if (response.ok) {
-        const result = await response.json()
-        if (result.data) {
-          const lines = result.data.split('\n')
-          lines.forEach((line: string) => {
-            terminal.writeln(line)
-          })
-        }
-        if (result.error) {
-          terminal.writeln(`\x1b[31mError: ${result.error}\x1b[0m`)
-        }
-      } else {
-        terminal.writeln(`\x1b[31mFailed to execute command\x1b[0m`)
-      }
-    } catch (error) {
-      terminal.writeln(`\x1b[31mConnection error: ${error}\x1b[0m`)
+  const getStatusColor = () => {
+    switch (connectionStatus) {
+      case 'connected': return 'bg-green-500'
+      case 'connecting': return 'bg-yellow-500'
+      case 'error': return 'bg-red-500'
+      default: return 'bg-gray-500'
     }
   }
 
   return (
-    <div 
-      ref={terminalRef} 
-      className="terminal-body flex-1 bg-gray-900"
-      style={{ minHeight: '400px' }}
-    />
+    <div className="flex flex-col h-full">
+      {/* Connection Status */}
+      <div className="bg-gray-800 text-white px-4 py-1 text-xs flex items-center justify-between">
+        <span>SSH Proxy: 34.201.132.19:3001</span>
+        <div className="flex items-center space-x-2">
+          <div className={`w-2 h-2 rounded-full ${getStatusColor()}`}></div>
+          <span className="capitalize">{connectionStatus}</span>
+        </div>
+      </div>
+      
+      {/* Terminal */}
+      <div 
+        ref={terminalRef} 
+        className="terminal-body flex-1 bg-gray-900"
+        style={{ minHeight: '400px' }}
+      />
+    </div>
   )
 }
