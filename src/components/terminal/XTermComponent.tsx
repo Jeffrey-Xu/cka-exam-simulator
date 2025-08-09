@@ -94,14 +94,15 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
   }, [sessionId])
 
   const connectWebSocket = (terminal: XTerm) => {
-    const wsUrl = 'ws://34.201.132.19:3001'
+    // Use WSS (secure WebSocket) to connect to HTTPS server
+    const wsUrl = 'wss://34.201.132.19:3001'
     
     try {
       const ws = new WebSocket(wsUrl)
       wsRef.current = ws
 
       ws.onopen = () => {
-        console.log('WebSocket connected to SSH proxy')
+        console.log('WebSocket connected to SSH proxy (WSS)')
         setConnectionStatus('connected')
         showWelcomeMessage(terminal)
       }
@@ -131,13 +132,16 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
       ws.onerror = (error) => {
         console.error('WebSocket error:', error)
         setConnectionStatus('error')
-        terminal.writeln('\r\n\x1b[31m[Connection error - check network connection]\x1b[0m')
+        terminal.writeln('\r\n\x1b[33m[SSL Certificate Warning: Click "Advanced" → "Proceed to 34.201.132.19"]\x1b[0m')
+        terminal.writeln('\x1b[33m[Then refresh this page to connect]\x1b[0m')
+        terminal.writeln('\x1b[31m[Connection error - check network connection]\x1b[0m')
       }
 
     } catch (error) {
       console.error('Failed to create WebSocket connection:', error)
       setConnectionStatus('error')
       terminal.writeln('\x1b[31m[Failed to connect to SSH proxy server]\x1b[0m')
+      terminal.writeln('\x1b[33m[Visit https://34.201.132.19:3001/health to accept SSL certificate]\x1b[0m')
     }
   }
 
@@ -170,10 +174,10 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
     terminal.writeln('\x1b[32m│                 CKA Exam Simulator v2.0                    │\x1b[0m')
     terminal.writeln('\x1b[32m│                                                             │\x1b[0m')
     terminal.writeln('\x1b[32m│  🚀 Connected to Real Kubernetes Cluster                   │\x1b[0m')
-    terminal.writeln('\x1b[32m│  📡 Live kubectl commands via SSH proxy                    │\x1b[0m')
+    terminal.writeln('\x1b[32m│  🔐 Secure WebSocket (WSS) via SSH proxy                   │\x1b[0m')
     terminal.writeln('\x1b[32m│                                                             │\x1b[0m')
     terminal.writeln('\x1b[32m│  Master: 100.27.28.215 | Worker: 54.145.132.72            │\x1b[0m')
-    terminal.writeln('\x1b[32m│  Proxy: 34.201.132.19:3001                                 │\x1b[0m')
+    terminal.writeln('\x1b[32m│  Proxy: 34.201.132.19:3001 (HTTPS/WSS)                    │\x1b[0m')
     terminal.writeln('\x1b[32m│                                                             │\x1b[0m')
     terminal.writeln('\x1b[32m│  Type kubectl commands to interact with the cluster       │\x1b[0m')
     terminal.writeln('\x1b[32m│  Example: kubectl get nodes                                │\x1b[0m')
@@ -201,6 +205,7 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
         }))
       } else if (command) {
         terminal.writeln('\x1b[31mNot connected to SSH proxy server\x1b[0m')
+        terminal.writeln('\x1b[33mVisit https://34.201.132.19:3001/health to accept SSL certificate\x1b[0m')
         terminal.write('\x1b[36mubuntu@master01\x1b[0m:\x1b[34m~\x1b[0m$ ')
       } else {
         terminal.write('\x1b[36mubuntu@master01\x1b[0m:\x1b[34m~\x1b[0m$ ')
@@ -227,16 +232,35 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
     }
   }
 
+  const getStatusText = () => {
+    switch (connectionStatus) {
+      case 'connected': return 'Connected (WSS)'
+      case 'connecting': return 'Connecting...'
+      case 'error': return 'SSL Certificate Required'
+      default: return 'Disconnected'
+    }
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Connection Status */}
       <div className="bg-gray-800 text-white px-4 py-1 text-xs flex items-center justify-between">
-        <span>SSH Proxy: 34.201.132.19:3001</span>
+        <span>SSH Proxy: 34.201.132.19:3001 (HTTPS/WSS)</span>
         <div className="flex items-center space-x-2">
           <div className={`w-2 h-2 rounded-full ${getStatusColor()}`}></div>
-          <span className="capitalize">{connectionStatus}</span>
+          <span>{getStatusText()}</span>
         </div>
       </div>
+      
+      {/* SSL Certificate Helper */}
+      {connectionStatus === 'error' && (
+        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-2 text-xs">
+          <p className="font-bold">SSL Certificate Required:</p>
+          <p>1. Visit <a href="https://34.201.132.19:3001/health" target="_blank" rel="noopener noreferrer" className="underline text-blue-600">https://34.201.132.19:3001/health</a></p>
+          <p>2. Click "Advanced" → "Proceed to 34.201.132.19 (unsafe)"</p>
+          <p>3. Refresh this page to connect</p>
+        </div>
+      )}
       
       {/* Terminal */}
       <div 
