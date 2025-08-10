@@ -1,16 +1,22 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   BookOpen, 
   Clock, 
   Target, 
   Server,
   Play,
-  ArrowLeft
+  ArrowLeft,
+  CheckCircle,
+  AlertCircle,
+  Terminal,
+  FileText,
+  Settings
 } from 'lucide-react'
 
 interface Question {
@@ -36,6 +42,8 @@ interface QuestionDetailProps {
 }
 
 export default function QuestionDetail({ question, onStartPractice, onBack }: QuestionDetailProps) {
+  const [showSolution, setShowSolution] = useState(false)
+
   const getDifficultyStars = (difficulty: number) => {
     return '★'.repeat(difficulty) + '☆'.repeat(5 - difficulty)
   }
@@ -47,25 +55,144 @@ export default function QuestionDetail({ question, onStartPractice, onBack }: Qu
     return 'text-green-600'
   }
 
-  const formatQuestionText = (text: string) => {
-    return text.split('\n').map((line, index) => {
-      if (line.startsWith('- ') || line.startsWith('• ')) {
-        return (
-          <li key={index} className="ml-4 list-disc">
-            {line.substring(2)}
-          </li>
+  const formatTaskText = (text: string) => {
+    if (!text) return null
+    
+    const lines = text.split('\n')
+    const elements: JSX.Element[] = []
+    let currentList: string[] = []
+    
+    lines.forEach((line, index) => {
+      const trimmedLine = line.trim()
+      
+      if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('• ')) {
+        currentList.push(trimmedLine.substring(2))
+      } else {
+        // If we have accumulated list items, render them
+        if (currentList.length > 0) {
+          elements.push(
+            <ul key={`list-${index}`} className="list-disc list-inside space-y-1 mb-4 ml-4">
+              {currentList.map((item, i) => (
+                <li key={i} className="text-gray-700">{item}</li>
+              ))}
+            </ul>
+          )
+          currentList = []
+        }
+        
+        if (trimmedLine === '') {
+          elements.push(<div key={index} className="mb-2" />)
+        } else if (trimmedLine.includes(':') && !trimmedLine.startsWith('[') && !trimmedLine.includes('$')) {
+          // Likely a section header
+          elements.push(
+            <h4 key={index} className="font-semibold text-gray-900 mb-2 mt-4">
+              {trimmedLine}
+            </h4>
+          )
+        } else {
+          elements.push(
+            <p key={index} className="mb-2 text-gray-700 leading-relaxed">
+              {trimmedLine}
+            </p>
+          )
+        }
+      }
+    })
+    
+    // Handle any remaining list items
+    if (currentList.length > 0) {
+      elements.push(
+        <ul key="final-list" className="list-disc list-inside space-y-1 mb-4 ml-4">
+          {currentList.map((item, i) => (
+            <li key={i} className="text-gray-700">{item}</li>
+          ))}
+        </ul>
+      )
+    }
+    
+    return <div className="prose prose-sm max-w-none">{elements}</div>
+  }
+
+  const formatCommandOutput = (text: string) => {
+    if (!text) return null
+    
+    const lines = text.split('\n')
+    const elements: JSX.Element[] = []
+    
+    lines.forEach((line, index) => {
+      if (line.includes('$') && (line.includes('kubectl') || line.includes('vim') || line.includes('ssh'))) {
+        // Command line
+        elements.push(
+          <div key={index} className="bg-gray-900 text-green-400 p-2 rounded font-mono text-sm mb-2">
+            {line}
+          </div>
+        )
+      } else if (line.startsWith('NAME') || line.includes('STATUS') || line.includes('READY')) {
+        // Table header
+        elements.push(
+          <div key={index} className="bg-blue-50 p-2 rounded font-mono text-xs text-blue-900 mb-1">
+            {line}
+          </div>
+        )
+      } else if (line.includes('apiVersion:') || line.includes('kind:') || line.includes('metadata:')) {
+        // YAML content
+        elements.push(
+          <div key={index} className="bg-yellow-50 p-1 font-mono text-xs text-yellow-900">
+            {line}
+          </div>
+        )
+      } else if (line.trim() && !line.startsWith('#') && !line.startsWith('//')) {
+        // Regular output
+        elements.push(
+          <div key={index} className="text-gray-700 font-mono text-sm mb-1">
+            {line}
+          </div>
+        )
+      } else if (line.startsWith('#')) {
+        // Comments
+        elements.push(
+          <div key={index} className="text-green-600 text-sm mb-1 italic">
+            {line}
+          </div>
         )
       }
-      if (line.trim() === '') {
-        return <br key={index} />
-      }
-      return (
-        <p key={index} className="mb-2">
-          {line}
-        </p>
-      )
     })
+    
+    return <div className="space-y-1">{elements}</div>
   }
+
+  const extractTaskSteps = (fullQuestion: string) => {
+    const steps = []
+    const lines = fullQuestion.split('\n')
+    let currentStep = ''
+    let stepNumber = 1
+    
+    for (const line of lines) {
+      if (line.trim().match(/^\d+\./)) {
+        if (currentStep) {
+          steps.push({ number: stepNumber - 1, content: currentStep.trim() })
+        }
+        currentStep = line
+        stepNumber++
+      } else if (line.trim().startsWith('Create') || line.trim().startsWith('Edit') || line.trim().startsWith('Apply') || line.trim().startsWith('Ensure')) {
+        if (currentStep) {
+          steps.push({ number: stepNumber - 1, content: currentStep.trim() })
+        }
+        currentStep = line
+        stepNumber++
+      } else {
+        currentStep += '\n' + line
+      }
+    }
+    
+    if (currentStep) {
+      steps.push({ number: stepNumber - 1, content: currentStep.trim() })
+    }
+    
+    return steps
+  }
+
+  const taskSteps = extractTaskSteps(question.fullQuestion)
 
   return (
     <div className="space-y-6">
@@ -75,10 +202,20 @@ export default function QuestionDetail({ question, onStartPractice, onBack }: Qu
           <ArrowLeft className="h-4 w-4" />
           <span>Back to Questions</span>
         </Button>
-        <Button onClick={onStartPractice} className="bg-blue-600 hover:bg-blue-700 flex items-center space-x-2">
-          <Play className="h-4 w-4" />
-          <span>Start Practice</span>
-        </Button>
+        <div className="flex space-x-3">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowSolution(!showSolution)}
+            className="flex items-center space-x-2"
+          >
+            <FileText className="h-4 w-4" />
+            <span>{showSolution ? 'Hide' : 'Show'} Solution</span>
+          </Button>
+          <Button onClick={onStartPractice} className="bg-blue-600 hover:bg-blue-700 flex items-center space-x-2">
+            <Play className="h-4 w-4" />
+            <span>Start Practice</span>
+          </Button>
+        </div>
       </div>
 
       {/* Question Overview */}
@@ -135,105 +272,160 @@ export default function QuestionDetail({ question, onStartPractice, onBack }: Qu
         </CardContent>
       </Card>
 
-      {/* Question Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Question Content */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <BookOpen className="h-5 w-5" />
-              <span>Question</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="prose prose-sm max-w-none">
-              {formatQuestionText(question.fullQuestion)}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="task" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="task">Task Details</TabsTrigger>
+          <TabsTrigger value="environment">Environment</TabsTrigger>
+          <TabsTrigger value="hints">Hints</TabsTrigger>
+          <TabsTrigger value="validation">Validation</TabsTrigger>
+        </TabsList>
 
-        {/* Environment Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Server className="h-5 w-5" />
-              <span>Environment</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="prose prose-sm max-w-none">
-              {formatQuestionText(question.environment)}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Hints and Validation Preview */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Available Hints */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Available Hints</CardTitle>
-            <CardDescription>
-              Progressive hints are available during practice (with point penalties)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {question.hints.map((hint, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <p className="font-medium">{hint.title}</p>
-                    <p className="text-sm text-gray-600 capitalize">{hint.level} level</p>
-                  </div>
-                  <Badge variant="outline" className="text-red-600">
-                    -{hint.penaltyPoints} pts
-                  </Badge>
+        {/* Task Details Tab */}
+        <TabsContent value="task">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <CheckCircle className="h-5 w-5" />
+                <span>Task Requirements</span>
+              </CardTitle>
+              <CardDescription>
+                Complete the following tasks in the specified order
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {taskSteps.length > 0 ? (
+                <div className="space-y-6">
+                  {taskSteps.map((step, index) => (
+                    <div key={index} className="border-l-4 border-blue-500 pl-4">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <div className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
+                          {index + 1}
+                        </div>
+                        <h4 className="font-semibold text-gray-900">Step {index + 1}</h4>
+                      </div>
+                      {formatTaskText(step.content)}
+                    </div>
+                  ))}
                 </div>
-              ))}
-              {question.hints.length === 0 && (
-                <p className="text-gray-500 text-center py-4">
-                  No hints available - rely on your knowledge and documentation!
-                </p>
+              ) : (
+                <div className="bg-blue-50 p-6 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 mb-3">Task Description</h4>
+                  {formatTaskText(question.fullQuestion)}
+                </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-        {/* Validation Criteria */}
-        <Card>
+        {/* Environment Tab */}
+        <TabsContent value="environment">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Server className="h-5 w-5" />
+                <span>Cluster Environment</span>
+              </CardTitle>
+              <CardDescription>
+                Your practice environment specifications
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                {formatTaskText(question.environment)}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Hints Tab */}
+        <TabsContent value="hints">
+          <Card>
+            <CardHeader>
+              <CardTitle>Available Hints</CardTitle>
+              <CardDescription>
+                Progressive hints are available during practice (with point penalties)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {question.hints.map((hint, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <p className="font-medium">{hint.title}</p>
+                      <p className="text-sm text-gray-600 capitalize">{hint.level} level</p>
+                    </div>
+                    <Badge variant="outline" className="text-red-600">
+                      -{hint.penaltyPoints} pts
+                    </Badge>
+                  </div>
+                ))}
+                {question.hints.length === 0 && (
+                  <p className="text-gray-500 text-center py-4">
+                    No hints available - rely on your knowledge and documentation!
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Validation Tab */}
+        <TabsContent value="validation">
+          <Card>
+            <CardHeader>
+              <CardTitle>Validation Criteria</CardTitle>
+              <CardDescription>
+                Your solution will be validated against these requirements
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {question.validation.map((criteria, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <p className="font-medium">{criteria.description}</p>
+                      {criteria.command && (
+                        <code className="text-xs bg-gray-100 px-2 py-1 rounded mt-1 block">
+                          {criteria.command}
+                        </code>
+                      )}
+                    </div>
+                    <Badge variant="outline" className="text-green-600">
+                      +{criteria.points} pts
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Solution Section (if shown) */}
+      {showSolution && (
+        <Card className="border-orange-200 bg-orange-50">
           <CardHeader>
-            <CardTitle>Validation Criteria</CardTitle>
-            <CardDescription>
-              Your solution will be validated against these requirements
+            <CardTitle className="flex items-center space-x-2 text-orange-800">
+              <AlertCircle className="h-5 w-5" />
+              <span>Complete Solution</span>
+            </CardTitle>
+            <CardDescription className="text-orange-700">
+              ⚠️ Viewing the solution will affect your practice score
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {question.validation.map((criteria, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <p className="font-medium">{criteria.description}</p>
-                    {criteria.command && (
-                      <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                        {criteria.command}
-                      </code>
-                    )}
-                  </div>
-                  <Badge variant="outline" className="text-green-600">
-                    +{criteria.points} pts
-                  </Badge>
-                </div>
-              ))}
+            <div className="bg-white p-4 rounded-lg border">
+              {formatCommandOutput(question.answer)}
             </div>
           </CardContent>
         </Card>
-      </div>
+      )}
 
       {/* Start Practice CTA */}
       <Card className="bg-blue-50 border-blue-200">
         <CardContent className="p-6 text-center">
-          <Target className="h-12 w-12 mx-auto mb-4 text-blue-600" />
+          <Terminal className="h-12 w-12 mx-auto mb-4 text-blue-600" />
           <h3 className="text-xl font-semibold mb-2">Ready to Practice?</h3>
           <p className="text-gray-600 mb-4">
             You'll have {question.timeLimit} minutes to complete this question. 

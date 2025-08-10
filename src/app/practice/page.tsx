@@ -17,6 +17,10 @@ const QuestionManager = dynamic(() => import('@/components/exam/QuestionManager'
   ssr: false
 })
 
+const TaskPanel = dynamic(() => import('@/components/exam/TaskPanel'), {
+  ssr: false
+})
+
 const HintSystem = dynamic(() => import('@/components/exam/HintSystem'), {
   ssr: false
 })
@@ -362,8 +366,14 @@ export default function PracticePage() {
                   </Card>
                 </div>
 
-                {/* Hints and Validation - Takes up 1/3 of the space */}
-                <div className="lg:col-span-1">
+                {/* Task Panel and Hints - Takes up 1/3 of the space */}
+                <div className="lg:col-span-1 space-y-4">
+                  <TaskPanel
+                    question={selectedQuestion}
+                    timeRemaining={timeRemaining}
+                    totalTime={selectedQuestion.timeLimit * 60}
+                  />
+                  
                   <HintSystem
                     questionId={selectedQuestion.id}
                     hints={selectedQuestion.hints}
