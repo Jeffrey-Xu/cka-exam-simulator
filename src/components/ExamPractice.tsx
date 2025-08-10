@@ -245,8 +245,8 @@ const ExamPractice: React.FC = () => {
           </div>
 
           {/* Question Content Tabs */}
-          <div className="flex-1 bg-white overflow-hidden">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+          <div className="flex-1 bg-white overflow-hidden flex flex-col">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col" key={currentQuestion.id}>
               <TabsList className="grid w-full grid-cols-4 bg-gray-50 m-0 rounded-none border-b flex-shrink-0">
                 <TabsTrigger value="task" className="rounded-none">Task</TabsTrigger>
                 <TabsTrigger value="environment" className="rounded-none">Environment</TabsTrigger>
@@ -254,9 +254,13 @@ const ExamPractice: React.FC = () => {
                 <TabsTrigger value="tips" className="rounded-none">Tips</TabsTrigger>
               </TabsList>
 
-              <div className="tabs-content-container flex-1 overflow-hidden">
-                <TabsContent value="task" className="tabs-content-item tab-content m-0 h-full overflow-y-auto">
-                  <div className="p-6">
+              <div className="flex-1 min-h-0" key={`${currentQuestion.id}-${activeTab}`}>
+                <TabsContent 
+                  value="task" 
+                  className="m-0 h-full"
+                  style={{ height: '100%', overflow: 'hidden' }}
+                >
+                  <div className="scrollable-content p-6">
                     <div className="question-content space-y-4">
                       <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                         <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
@@ -271,8 +275,12 @@ const ExamPractice: React.FC = () => {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="environment" className="tabs-content-item tab-content m-0 h-full overflow-y-auto">
-                  <div className="p-6">
+                <TabsContent 
+                  value="environment" 
+                  className="m-0 h-full"
+                  style={{ height: '100%', overflow: 'hidden' }}
+                >
+                  <div className="scrollable-content p-6">
                     <div className="question-content space-y-4">
                       <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                         <h3 className="font-semibold text-green-900 mb-3 flex items-center gap-2">
@@ -296,22 +304,30 @@ const ExamPractice: React.FC = () => {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="solution" className="tabs-content-item tab-content m-0 h-full overflow-y-auto">
-                  <div className="p-6">
+                <TabsContent 
+                  value="solution" 
+                  className="m-0 h-full"
+                  style={{ height: '100%', overflow: 'hidden' }}
+                >
+                  <div className="scrollable-content p-6">
                     <div className="code-block p-4 rounded-lg">
                       <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
                         <Settings className="h-5 w-5" />
                         Step-by-Step Solution
                       </h3>
-                      <pre className="text-sm text-green-400 whitespace-pre-wrap font-mono overflow-x-auto leading-relaxed">
+                      <pre className="text-sm text-green-400 whitespace-pre-wrap font-mono leading-relaxed">
                         {currentQuestion.steps}
                       </pre>
                     </div>
                   </div>
                 </TabsContent>
 
-                <TabsContent value="tips" className="tabs-content-item tab-content m-0 h-full overflow-y-auto">
-                  <div className="p-6">
+                <TabsContent 
+                  value="tips" 
+                  className="m-0 h-full"
+                  style={{ height: '100%', overflow: 'hidden' }}
+                >
+                  <div className="scrollable-content p-6">
                     <div className="question-content space-y-4">
                       {currentQuestion.diagram && (
                         <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">

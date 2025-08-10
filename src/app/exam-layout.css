@@ -49,60 +49,78 @@
   background: #fafafa;
 }
 
-.tab-content {
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 #f1f5f9;
-  overflow-y: auto;
-  height: 100%;
+/* Force scrolling for Radix UI TabsContent */
+[data-radix-scroll-area-viewport] {
+  height: 100% !important;
+  overflow-y: auto !important;
 }
 
-.tab-content::-webkit-scrollbar {
-  width: 8px;
+/* Override Radix UI TabsContent default styles */
+[role="tabpanel"] {
+  height: 100% !important;
+  overflow: hidden !important;
 }
 
-.tab-content::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
-}
-
-.tab-content::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-  border: 1px solid #f1f5f9;
-}
-
-.tab-content::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* Ensure tab content areas are scrollable */
-.tabs-content-container {
-  height: 100%;
-  overflow: hidden;
-}
-
-.tabs-content-item {
+/* Ensure scrollable content areas */
+.scrollable-content {
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
+  max-height: 100%;
 }
 
-/* Smooth scrolling */
-.tabs-content-item {
-  scroll-behavior: smooth;
+/* Custom scrollbar for question content */
+.scrollable-content::-webkit-scrollbar {
+  width: 12px;
 }
 
-/* Better spacing for scrollable content */
-.question-content {
-  padding-bottom: 2rem;
+.scrollable-content::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 6px;
 }
 
-/* Fix for long code blocks */
+.scrollable-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 6px;
+  border: 2px solid #f1f5f9;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Firefox scrollbar */
+.scrollable-content {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+/* Ensure long code blocks are scrollable */
 .code-block pre {
-  max-height: none;
+  max-height: none !important;
   overflow-x: auto;
+  overflow-y: visible;
   white-space: pre-wrap;
   word-wrap: break-word;
+}
+
+/* Fix for very long content */
+.question-content {
+  padding-bottom: 3rem;
+  min-height: min-content;
+}
+
+/* Ensure proper height calculation */
+.exam-container {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.exam-container .flex-1 {
+  min-height: 0;
+  flex: 1;
 }
 
 .code-block {
