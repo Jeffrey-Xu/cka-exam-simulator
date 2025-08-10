@@ -7,18 +7,11 @@ import {
   Target, 
   Clock, 
   Award, 
-  TrendingUp, 
-  Shield, 
-  Zap,
-  CheckCircle,
-  Users,
-  Globe,
+  AlertTriangle,
   Server,
   Database,
   Network,
-  Settings,
-  AlertTriangle,
-  BarChart3
+  Settings
 } from 'lucide-react'
 
 export default function HomePage() {
@@ -62,45 +55,6 @@ export default function HomePage() {
       color: 'text-yellow-600',
       bg: 'bg-yellow-100',
       description: 'Persistent Volumes, Storage Classes, and StatefulSets'
-    }
-  ]
-
-  const features = [
-    {
-      icon: Target,
-      title: 'Real Kubernetes Cluster',
-      description: 'Practice on actual AWS infrastructure with master and worker nodes',
-      highlight: 'Authentic Experience'
-    },
-    {
-      icon: Shield,
-      title: 'Trusted SSL Certificates',
-      description: 'Professional-grade security with Let\'s Encrypt certificates',
-      highlight: 'Enterprise Security'
-    },
-    {
-      icon: Zap,
-      title: 'Full Command Access',
-      description: 'Complete Linux terminal access with all kubectl commands',
-      highlight: 'No Restrictions'
-    },
-    {
-      icon: BarChart3,
-      title: 'Performance Analytics',
-      description: 'Track progress, identify weak areas, and get personalized recommendations',
-      highlight: 'AI-Powered Insights'
-    },
-    {
-      icon: Clock,
-      title: 'Exam Simulation',
-      description: 'Timed practice sessions matching real CKA exam conditions',
-      highlight: 'Realistic Timing'
-    },
-    {
-      icon: BookOpen,
-      title: 'Interactive Hints',
-      description: 'Progressive hint system with scoring penalties like the real exam',
-      highlight: 'Smart Learning'
     }
   ]
 
@@ -193,115 +147,6 @@ export default function HomePage() {
               </Card>
             ))}
           </div>
-        </div>
-
-        {/* Key Features */}
-        <div className="mb-16">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Why Choose Our CKA Simulator?
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Built by Kubernetes experts, our simulator provides the most authentic 
-              and comprehensive CKA exam preparation experience available.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center space-x-3 mb-2">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <feature.icon className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <Badge variant="secondary" className="text-xs">
-                      {feature.highlight}
-                    </Badge>
-                  </div>
-                  <CardTitle className="text-lg">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription>
-                    {feature.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Infrastructure Highlight */}
-        <Card className="mb-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-          <CardContent className="p-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-              <div>
-                <h3 className="text-2xl font-bold mb-4">
-                  Professional AWS Infrastructure
-                </h3>
-                <p className="text-blue-100 mb-6">
-                  Practice on real Kubernetes clusters running on AWS EC2 instances. 
-                  Experience the same environment you'll work with in production, 
-                  complete with master and worker nodes, persistent storage, and 
-                  enterprise networking.
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  <Badge className="bg-white/20 text-white border-white/30">
-                    AWS EC2 t3.medium
-                  </Badge>
-                  <Badge className="bg-white/20 text-white border-white/30">
-                    Kubernetes v1.28.15
-                  </Badge>
-                  <Badge className="bg-white/20 text-white border-white/30">
-                    Let's Encrypt SSL
-                  </Badge>
-                  <Badge className="bg-white/20 text-white border-white/30">
-                    Professional DNS
-                  </Badge>
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="bg-white/10 rounded-lg p-6">
-                  <Server className="h-16 w-16 mx-auto mb-4 text-white" />
-                  <div className="text-sm text-blue-100">
-                    <div className="mb-2">🖥️ Master Node: master01.ciscloudlab.link</div>
-                    <div className="mb-2">⚙️ Worker Node: worker01.ciscloudlab.link</div>
-                    <div>🔐 SSH Proxy: ssh-proxy.ciscloudlab.link</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Call to Action */}
-        <div className="text-center">
-          <Card className="max-w-2xl mx-auto">
-            <CardContent className="p-8">
-              <Award className="h-16 w-16 mx-auto mb-4 text-yellow-500" />
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                Ready to Get CKA Certified?
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Join thousands of successful candidates who used our simulator to pass 
-                the CKA exam. Start your journey today with our comprehensive practice platform.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/practice">
-                  <Button size="lg" className="bg-green-600 hover:bg-green-700">
-                    <CheckCircle className="mr-2 h-5 w-5" />
-                    Start Free Practice
-                  </Button>
-                </Link>
-                <Link href="/analytics">
-                  <Button size="lg" variant="outline">
-                    <TrendingUp className="mr-2 h-5 w-5" />
-                    View Analytics Demo
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
