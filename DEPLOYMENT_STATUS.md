@@ -1,19 +1,31 @@
-# 🚀 CKA Simulator v2.2 - Live Terminal Integration
+# 🚀 CKA Simulator v3.0 - Killer.sh-Inspired Professional Layout
 
 ## ✅ Successfully Deployed!
 
 **Latest Deployment**: https://cka-simulator-rkw8iffsn-jeffrey-xus-projects-8e6cab13.vercel.app
 
-## 🎯 What's New in v2.2
+## 🎯 What's New in v3.0
 
-### 🖥️ Live Terminal Integration
-- **Real Kubernetes Terminal** - Direct kubectl access to AWS cluster
-- **5-Tab Interface** - Task, Environment, **Terminal**, Solution, Architecture
+### 🏆 Professional Exam Interface (Killer.sh-Inspired)
+- **Split-Screen Layout** - Left panel (questions) + Right panel (terminal)
+- **Question Inventory Bar** - Top navigation with progress tracking
+- **Professional Styling** - Authentic exam-like appearance
+- **Responsive Design** - Works on desktop, tablet, and mobile
+- **Smooth Animations** - Professional transitions and hover effects
+
+### 🖥️ Enhanced Terminal Integration
+- **Full-Height Terminal** - Right panel dedicated to live Kubernetes access
 - **Session Management** - Unique terminal session per question
-- **Live Connection Status** - Real-time cluster connectivity indicator
-- **Professional UI** - Seamless integration with existing design
+- **Connection Status** - Real-time cluster connectivity indicator
+- **Professional Header** - Terminal window with status and controls
 
-### 📋 Enhanced Practice Interface
+### 📊 Improved Question Management
+- **Visual Progress Tracking** - Completed questions clearly marked
+- **Quick Navigation** - Click any question button to jump instantly
+- **Category Color Coding** - Visual organization by exam domain
+- **Difficulty Badges** - Easy, Medium, Hard indicators
+
+### 🎨 UI/UX Enhancements
 - **Clean, focused design** inspired by killer.sh
 - **Tabbed interface** with 4 key sections:
   - **Task**: Question description + environment prep button
@@ -72,5 +84,5 @@ This simplified version removes complex features and focuses on:
 The simplified practice module is now live and ready for CKA exam preparation!
 
 ---
-*Updated: 2025-08-10T08:18:00Z*
-*Deployment: Production Ready with Live Terminal ✅*
+*Updated: 2025-08-10T08:25:00Z*
+*Deployment: Production Ready with Killer.sh Layout ✅*
