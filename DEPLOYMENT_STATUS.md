@@ -1,12 +1,19 @@
-# 🚀 CKA Simulator v2.1 - Simplified Practice Module
+# 🚀 CKA Simulator v2.2 - Live Terminal Integration
 
 ## ✅ Successfully Deployed!
 
 **Latest Deployment**: https://cka-simulator-rkw8iffsn-jeffrey-xus-projects-8e6cab13.vercel.app
 
-## 🎯 What's New in v2.1
+## 🎯 What's New in v2.2
 
-### 📋 Simplified Practice Interface
+### 🖥️ Live Terminal Integration
+- **Real Kubernetes Terminal** - Direct kubectl access to AWS cluster
+- **5-Tab Interface** - Task, Environment, **Terminal**, Solution, Architecture
+- **Session Management** - Unique terminal session per question
+- **Live Connection Status** - Real-time cluster connectivity indicator
+- **Professional UI** - Seamless integration with existing design
+
+### 📋 Enhanced Practice Interface
 - **Clean, focused design** inspired by killer.sh
 - **Tabbed interface** with 4 key sections:
   - **Task**: Question description + environment prep button
@@ -65,5 +72,5 @@ This simplified version removes complex features and focuses on:
 The simplified practice module is now live and ready for CKA exam preparation!
 
 ---
-*Updated: 2025-08-10T07:45:00Z*
-*Deployment: Production Ready ✅*
+*Updated: 2025-08-10T08:18:00Z*
+*Deployment: Production Ready with Live Terminal ✅*
