@@ -18,6 +18,10 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
   const wsRef = useRef<WebSocket | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting')
   const currentCommandRef = useRef<string>('')
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const reconnectAttemptsRef = useRef<number>(0)
+  const maxReconnectAttempts = 10
 
   useEffect(() => {
     if (!terminalRef.current) return
@@ -86,28 +90,62 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
 
     return () => {
       window.removeEventListener('resize', handleResize)
-      if (wsRef.current) {
-        wsRef.current.close()
+      
+      // Clear timeouts and intervals
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
       }
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current)
+      }
+      
+      // Close WebSocket connection
+      if (wsRef.current) {
+        wsRef.current.close(1000, 'Component unmounting')
+      }
+      
       terminal.dispose()
     }
   }, [sessionId])
 
   const connectWebSocket = (terminal: XTerm) => {
+    // Clear any existing reconnection timeout
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current)
+      reconnectTimeoutRef.current = null
+    }
+
+    // Don't attempt to connect if we already have an active connection
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      return
+    }
+
+    setConnectionStatus('connecting')
     terminal.writeln('\x1b[33m[Connecting to ssh-proxy.ciscloudlab.link with trusted SSL...]\x1b[0m')
     
     // Use DNS name with trusted Let's Encrypt certificate
     const wsUrl = 'wss://ssh-proxy.ciscloudlab.link:3001'
     
     try {
-      // Create WebSocket with trusted SSL - no special handling needed
+      // Create WebSocket with trusted SSL
       const ws = new WebSocket(wsUrl)
       wsRef.current = ws
 
       ws.onopen = () => {
         console.log('WebSocket connected to SSH proxy via trusted SSL')
         setConnectionStatus('connected')
+        reconnectAttemptsRef.current = 0 // Reset reconnect attempts on successful connection
+        
+        // Send session initialization with keepalive
+        ws.send(JSON.stringify({
+          type: 'init',
+          sessionId: sessionId,
+          timestamp: new Date().toISOString(),
+          keepAlive: true
+        }))
+        
         showWelcomeMessage(terminal)
+        startHeartbeat()
       }
 
       ws.onmessage = (event) => {
@@ -120,36 +158,70 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
       }
 
       ws.onclose = (event) => {
-        console.log('WebSocket disconnected, code:', event.code)
+        console.log('WebSocket disconnected, code:', event.code, 'reason:', event.reason)
         setConnectionStatus('disconnected')
+        stopHeartbeat()
         
-        terminal.writeln('\r\n\x1b[31m[Connection lost - attempting to reconnect...]\x1b[0m')
-        
-        // Attempt to reconnect after 3 seconds
-        setTimeout(() => {
-          if (xtermRef.current) {
-            connectWebSocket(xtermRef.current)
-          }
-        }, 3000)
+        // Only show reconnection message if it wasn't a clean close
+        if (event.code !== 1000) {
+          terminal.writeln('\r\n\x1b[31m[Connection lost - attempting to reconnect...]\x1b[0m')
+          scheduleReconnect(terminal)
+        }
       }
 
       ws.onerror = (error) => {
         console.error('WebSocket error:', error)
         setConnectionStatus('error')
-        terminal.writeln('\r\n\x1b[31m[Connection error - check network connection]\x1b[0m')
-        
-        // Retry connection after 5 seconds
-        setTimeout(() => {
-          if (xtermRef.current) {
-            connectWebSocket(xtermRef.current)
-          }
-        }, 5000)
+        stopHeartbeat()
+        terminal.writeln('\r\n\x1b[31m[Connection error - retrying...]\x1b[0m')
+        scheduleReconnect(terminal)
       }
 
     } catch (error) {
       console.error('Failed to create WebSocket connection:', error)
       setConnectionStatus('error')
       terminal.writeln('\x1b[31m[Failed to connect to SSH proxy server]\x1b[0m')
+      scheduleReconnect(terminal)
+    }
+  }
+
+  const scheduleReconnect = (terminal: XTerm) => {
+    if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+      terminal.writeln('\x1b[31m[Max reconnection attempts reached. Please refresh the page.]\x1b[0m')
+      setConnectionStatus('error')
+      return
+    }
+
+    reconnectAttemptsRef.current++
+    const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current - 1), 30000) // Exponential backoff, max 30s
+    
+    terminal.writeln(`\x1b[33m[Reconnecting in ${delay/1000}s... (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})]\x1b[0m`)
+    
+    reconnectTimeoutRef.current = setTimeout(() => {
+      if (xtermRef.current) {
+        connectWebSocket(xtermRef.current)
+      }
+    }, delay)
+  }
+
+  const startHeartbeat = () => {
+    stopHeartbeat() // Clear any existing heartbeat
+    
+    heartbeatIntervalRef.current = setInterval(() => {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({
+          type: 'ping',
+          sessionId: sessionId,
+          timestamp: new Date().toISOString()
+        }))
+      }
+    }, 30000) // Send heartbeat every 30 seconds
+  }
+
+  const stopHeartbeat = () => {
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current)
+      heartbeatIntervalRef.current = null
     }
   }
 
@@ -172,19 +244,27 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
       case 'command-complete':
         terminal.write('\x1b[36mubuntu@master01\x1b[0m:\x1b[34m~\x1b[0m$ ')
         break
+      case 'pong':
+        // Heartbeat response - connection is alive
+        console.log('Received heartbeat pong from server')
+        break
+      case 'session-restored':
+        terminal.writeln(`\x1b[32m[Session restored: ${message.sessionId}]\x1b[0m`)
+        break
       default:
-        console.log('Unknown message type:', message.type)
+        console.log('Unknown message type:', message.type, message)
     }
   }
 
   const showWelcomeMessage = (terminal: XTerm) => {
     terminal.writeln('\x1b[32m╭─────────────────────────────────────────────────────────────╮\x1b[0m')
-    terminal.writeln('\x1b[32m│                 CKA Exam Simulator v2.1                    │\x1b[0m')
+    terminal.writeln('\x1b[32m│                 CKA Exam Simulator v3.0                    │\x1b[0m')
     terminal.writeln('\x1b[32m│                                                             │\x1b[0m')
     terminal.writeln('\x1b[32m│  🚀 Connected to Real Kubernetes Cluster                   │\x1b[0m')
     terminal.writeln('\x1b[32m│  🔐 Trusted SSL Certificate (Let\'s Encrypt)                │\x1b[0m')
     terminal.writeln('\x1b[32m│  🌐 AWS-managed DNS (ciscloudlab.link)                     │\x1b[0m')
     terminal.writeln('\x1b[32m│  💻 Full Command Access (All Linux Commands)               │\x1b[0m')
+    terminal.writeln('\x1b[32m│  ❤️  Session Persistence & Auto-Reconnection               │\x1b[0m')
     terminal.writeln('\x1b[32m│                                                             │\x1b[0m')
     terminal.writeln('\x1b[32m│  Master: master01.ciscloudlab.link                         │\x1b[0m')
     terminal.writeln('\x1b[32m│  Worker: worker01.ciscloudlab.link                         │\x1b[0m')
@@ -207,16 +287,19 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
       if (command && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         onCommand?.(command)
         
-        // Send command to WebSocket server
+        // Send command to WebSocket server with session persistence
         wsRef.current.send(JSON.stringify({
           type: 'command',
           command: command,
           sessionId: sessionId,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          keepSession: true
         }))
       } else if (command) {
-        terminal.writeln('\x1b[31mNot connected to SSH proxy server\x1b[0m')
-        terminal.write('\x1b[36mubuntu@master01\x1b[0m:\x1b[34m~\x1b[0m$ ')
+        terminal.writeln('\x1b[31mNot connected to SSH proxy server - attempting to reconnect...\x1b[0m')
+        if (xtermRef.current) {
+          connectWebSocket(xtermRef.current)
+        }
       } else {
         terminal.write('\x1b[36mubuntu@master01\x1b[0m:\x1b[34m~\x1b[0m$ ')
       }
@@ -244,7 +327,7 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
 
   const getStatusText = () => {
     switch (connectionStatus) {
-      case 'connected': return 'Connected (Trusted SSL)'
+      case 'connected': return 'Connected (Persistent Session)'
       case 'connecting': return 'Connecting...'
       case 'error': return 'Connection Error'
       default: return 'Disconnected'
