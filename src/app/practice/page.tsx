@@ -1,14 +1,29 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import XTermComponent from '@/components/terminal/XTermComponent'
-import QuestionManager from '@/components/exam/QuestionManager'
-import HintSystem from '@/components/exam/HintSystem'
-import PerformanceDashboard from '@/components/analytics/PerformanceDashboard'
+
+// Dynamic imports to avoid SSR issues
+const XTermComponent = dynamic(() => import('@/components/terminal/XTermComponent'), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center h-96"><div className="text-gray-500">Loading terminal...</div></div>
+})
+
+const QuestionManager = dynamic(() => import('@/components/exam/QuestionManager'), {
+  ssr: false
+})
+
+const HintSystem = dynamic(() => import('@/components/exam/HintSystem'), {
+  ssr: false
+})
+
+const PerformanceDashboard = dynamic(() => import('@/components/analytics/PerformanceDashboard'), {
+  ssr: false
+})
 import { 
   BookOpen, 
   Target, 

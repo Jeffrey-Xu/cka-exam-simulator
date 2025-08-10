@@ -7,6 +7,25 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Clock, CheckCircle, AlertCircle, BookOpen, Target, TrendingUp } from 'lucide-react'
 
+interface Hint {
+  id: string
+  level: 'basic' | 'intermediate' | 'advanced' | 'solution'
+  title: string
+  content: string
+  penaltyPoints: number
+  unlocked: boolean
+  usedAt?: Date
+}
+
+interface ValidationCriteria {
+  id: string
+  description: string
+  command?: string
+  expectedOutput?: string
+  status: 'pending' | 'checking' | 'passed' | 'failed'
+  points: number
+}
+
 interface Question {
   id: string
   title: string
@@ -14,8 +33,8 @@ interface Question {
   difficulty: number
   timeLimit: number
   description: string
-  hints: string[]
-  validation: string[]
+  hints: Hint[]
+  validation: ValidationCriteria[]
   status: 'not-started' | 'in-progress' | 'completed' | 'failed'
   attempts: number
   bestTime?: number
