@@ -3,8 +3,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle, Play, BookOpen, Network, Server, Settings, Wrench } from 'lucide-react';
+import { CheckCircle, Play, BookOpen, Network, Server, Settings, Wrench, Terminal as TerminalIcon } from 'lucide-react';
 import questionsData from '@/data/questions.json';
+import dynamic from 'next/dynamic';
+import { generateId } from '@/lib/utils';
+
+// Dynamically import Terminal to avoid SSR issues
+const Terminal = dynamic(() => import('@/components/terminal/Terminal'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-96 bg-gray-900 text-white rounded-lg">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+        <p>Loading terminal...</p>
+      </div>
+    </div>
+  )
+});
 
 interface Question {
   id: string;
@@ -31,12 +46,16 @@ const SimplePractice: React.FC = () => {
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [completedQuestions, setCompletedQuestions] = useState<Set<string>>(new Set());
   const [environmentReady, setEnvironmentReady] = useState<boolean>(false);
+  const [terminalSessionId, setTerminalSessionId] = useState<string>('');
 
   useEffect(() => {
     // Load first question by default
     if (questions.length > 0) {
       setCurrentQuestion(questions[0]);
     }
+    
+    // Initialize terminal session ID
+    setTerminalSessionId(`practice-${generateId()}`);
   }, [questions]);
 
   const prepareEnvironment = async (questionId: string) => {
@@ -101,13 +120,17 @@ const SimplePractice: React.FC = () => {
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-3">CKA Practice Lab</h1>
           <p className="text-lg text-gray-600 mb-4">
-            Master Kubernetes with 16 validated CKA questions in a real AWS environment
+            Master Kubernetes with 16 validated CKA questions and live terminal access to a real AWS cluster
           </p>
           
           <div className="flex flex-wrap gap-3">
             <Badge variant="outline" className="px-3 py-1">
               <Server className="h-4 w-4 mr-2" />
               AWS EC2 Environment
+            </Badge>
+            <Badge variant="outline" className="px-3 py-1 bg-green-50 border-green-200 text-green-800">
+              <TerminalIcon className="h-4 w-4 mr-2" />
+              Live Terminal
             </Badge>
             <Badge variant="outline" className="px-3 py-1">
               Kubernetes v1.28.15
@@ -155,6 +178,8 @@ const SimplePractice: React.FC = () => {
                     onClick={() => {
                       setCurrentQuestion(question);
                       setEnvironmentReady(false);
+                      // Generate new terminal session for each question
+                      setTerminalSessionId(`practice-${generateId()}`);
                     }}
                   >
                     <div className="flex items-start justify-between mb-2">
@@ -206,9 +231,10 @@ const SimplePractice: React.FC = () => {
                 
                 <CardContent>
                   <Tabs defaultValue="task" className="w-full">
-                    <TabsList className="grid w-full grid-cols-4">
+                    <TabsList className="grid w-full grid-cols-5">
                       <TabsTrigger value="task">Task</TabsTrigger>
                       <TabsTrigger value="environment">Environment</TabsTrigger>
+                      <TabsTrigger value="terminal">Terminal</TabsTrigger>
                       <TabsTrigger value="steps">Solution</TabsTrigger>
                       <TabsTrigger value="diagram">Architecture</TabsTrigger>
                     </TabsList>
@@ -295,6 +321,58 @@ const SimplePractice: React.FC = () => {
                             </div>
                           </div>
                         )}
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="terminal" className="mt-6">
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-100 rounded-lg">
+                              <TerminalIcon className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-blue-900">Live Kubernetes Terminal</h3>
+                              <p className="text-sm text-blue-700">
+                                Connected to real AWS Kubernetes cluster - Practice kubectl commands
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                            <span className="text-sm text-blue-700 font-medium">Live</span>
+                          </div>
+                        </div>
+                        
+                        <div className="h-96 rounded-lg overflow-hidden border border-gray-300 shadow-sm">
+                          {terminalSessionId && (
+                            <Terminal 
+                              sessionId={terminalSessionId}
+                              className="h-full"
+                              onCommand={(command) => {
+                                console.log('Command executed:', command);
+                                // You can add command logging or analytics here
+                              }}
+                            />
+                          )}
+                        </div>
+                        
+                        <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                          <div className="flex items-start gap-3">
+                            <div className="p-1 bg-yellow-100 rounded">
+                              <Wrench className="h-4 w-4 text-yellow-600" />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-yellow-900 mb-1">Terminal Tips</h4>
+                              <ul className="text-sm text-yellow-800 space-y-1">
+                                <li>• Use this terminal to practice the current question's kubectl commands</li>
+                                <li>• All commands execute on a real 2-node Kubernetes cluster</li>
+                                <li>• Check the Solution tab for step-by-step guidance</li>
+                                <li>• Terminal session persists while you navigate between tabs</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </TabsContent>
 
