@@ -45,6 +45,7 @@ interface QuestionManagerProps {
   questions: Question[]
   currentQuestionId?: string
   onQuestionSelect: (questionId: string) => void
+  onQuestionDetail: (questionId: string) => void
   onStartExam: () => void
   mode: 'practice' | 'exam' | 'review'
 }
@@ -53,6 +54,7 @@ export default function QuestionManager({
   questions, 
   currentQuestionId, 
   onQuestionSelect, 
+  onQuestionDetail,
   onStartExam,
   mode 
 }: QuestionManagerProps) {
@@ -283,6 +285,23 @@ export default function QuestionManager({
                     </div>
                     
                     <div className="ml-4">
+                      <div className="flex space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onQuestionDetail(question.id)}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          View Details
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => onQuestionSelect(question.id)}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          Start Practice
+                        </Button>
+                      </div>
                       <Badge className={getStatusColor(question.status)}>
                         {question.status.replace('-', ' ')}
                       </Badge>

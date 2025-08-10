@@ -21,9 +21,14 @@ const HintSystem = dynamic(() => import('@/components/exam/HintSystem'), {
   ssr: false
 })
 
+const QuestionDetail = dynamic(() => import('@/components/exam/QuestionDetail'), {
+  ssr: false
+})
+
 const PerformanceDashboard = dynamic(() => import('@/components/analytics/PerformanceDashboard'), {
   ssr: false
 })
+import { ckaQuestions } from '@/data/questions'
 import { 
   BookOpen, 
   Target, 
@@ -37,87 +42,19 @@ import {
   AlertCircle
 } from 'lucide-react'
 
-// Mock data - in real app this would come from API/database
-const mockQuestions = [
-  {
-    id: 'q1-pvc',
-    title: 'PersistentVolumeClaim (PVC) with MariaDB',
-    domain: 'Storage',
-    difficulty: 3,
-    timeLimit: 20,
-    description: 'Create a PVC and deploy MariaDB with persistent storage',
-    hints: [
-      {
-        id: 'h1',
-        level: 'basic' as const,
-        title: 'Storage Class Hint',
-        content: 'Check available storage classes with: kubectl get storageclass',
-        penaltyPoints: 5,
-        unlocked: false
-      },
-      {
-        id: 'h2',
-        level: 'intermediate' as const,
-        title: 'PVC Configuration',
-        content: 'PVC needs accessModes: [ReadWriteOnce] and resources.requests.storage',
-        penaltyPoints: 10,
-        unlocked: false
-      }
-    ],
-    validation: [
-      {
-        id: 'v1',
-        description: 'PVC is created and bound',
-        command: 'kubectl get pvc mariadb-pvc',
-        expectedOutput: 'Bound',
-        status: 'pending' as const,
-        points: 30
-      },
-      {
-        id: 'v2',
-        description: 'MariaDB pod is running',
-        command: 'kubectl get pod mariadb',
-        expectedOutput: 'Running',
-        status: 'pending' as const,
-        points: 40
-      }
-    ],
-    status: 'not-started' as const,
-    attempts: 0
-  },
-  {
-    id: 'q2-service',
-    title: 'Service (L4) with NodePort',
-    domain: 'Services & Networking',
-    difficulty: 2,
-    timeLimit: 15,
-    description: 'Create a NodePort service for nginx deployment',
-    hints: [
-      {
-        id: 'h3',
-        level: 'basic' as const,
-        title: 'Service Types',
-        content: 'NodePort exposes service on each node at a static port',
-        penaltyPoints: 5,
-        unlocked: false
-      }
-    ],
-    validation: [
-      {
-        id: 'v3',
-        description: 'Service is created with NodePort type',
-        command: 'kubectl get svc nginx-service',
-        expectedOutput: 'NodePort',
-        status: 'pending' as const,
-        points: 50
-      }
-    ],
-    status: 'completed' as const,
-    attempts: 2,
-    bestTime: 12,
-    lastAttempt: new Date('2025-08-09')
-  }
-]
+// Use real CKA questions instead of mock data
+const mockQuestions = ckaQuestions.map(q => ({
+  ...q,
+  hints: (q.hints || []).map(h => ({
+    ...h,
+    level: h.level as 'basic' | 'intermediate' | 'advanced' | 'solution'
+  })),
+  validation: (q.validation || []).map(v => ({
+    ...v,
+    status: v.status as 'pending' | 'checking' | 'passed' | 'failed'
+  })),
+  status: (q.status || 'not-started') as 'not-started' | 'in-progress' | 'completed' | 'failed'
+}))
 
 const mockPerformanceData = {
   overallStats: {
@@ -204,6 +141,7 @@ const mockPerformanceData = {
 export default function PracticePage() {
   const [activeTab, setActiveTab] = useState<'questions' | 'practice' | 'analytics'>('questions')
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null)
+  const [showQuestionDetail, setShowQuestionDetail] = useState(false)
   const [sessionId] = useState(() => `practice_${Date.now()}`)
   const [isPracticing, setIsPracticing] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState(0)
@@ -233,7 +171,20 @@ export default function PracticePage() {
       setTimeRemaining(question.timeLimit * 60) // Convert to seconds
       setActiveTab('practice')
       setIsPracticing(true)
+      setShowQuestionDetail(false)
     }
+  }
+
+  const handleQuestionDetail = (questionId: string) => {
+    setSelectedQuestionId(questionId)
+    setShowQuestionDetail(true)
+    setIsPracticing(false)
+  }
+
+  const handleBackToQuestions = () => {
+    setShowQuestionDetail(false)
+    setSelectedQuestionId(null)
+    setActiveTab('questions')
   }
 
   const handleStartExam = () => {
@@ -369,13 +320,22 @@ export default function PracticePage() {
 
           {/* Question Library Tab */}
           <TabsContent value="questions">
-            <QuestionManager
-              questions={mockQuestions}
-              currentQuestionId={selectedQuestionId || undefined}
-              onQuestionSelect={handleQuestionSelect}
-              onStartExam={handleStartExam}
-              mode="practice"
-            />
+            {showQuestionDetail && selectedQuestionId ? (
+              <QuestionDetail
+                question={mockQuestions.find(q => q.id === selectedQuestionId)!}
+                onStartPractice={() => handleQuestionSelect(selectedQuestionId)}
+                onBack={handleBackToQuestions}
+              />
+            ) : (
+              <QuestionManager
+                questions={mockQuestions}
+                currentQuestionId={selectedQuestionId || undefined}
+                onQuestionSelect={handleQuestionSelect}
+                onQuestionDetail={handleQuestionDetail}
+                onStartExam={handleStartExam}
+                mode="practice"
+              />
+            )}
           </TabsContent>
 
           {/* Practice Session Tab */}
