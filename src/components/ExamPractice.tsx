@@ -245,90 +245,98 @@ const ExamPractice: React.FC = () => {
           </div>
 
           {/* Question Content Tabs */}
-          <div className="flex-1 bg-white">
+          <div className="flex-1 bg-white overflow-hidden">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-              <TabsList className="grid w-full grid-cols-4 bg-gray-50 m-0 rounded-none border-b">
+              <TabsList className="grid w-full grid-cols-4 bg-gray-50 m-0 rounded-none border-b flex-shrink-0">
                 <TabsTrigger value="task" className="rounded-none">Task</TabsTrigger>
                 <TabsTrigger value="environment" className="rounded-none">Environment</TabsTrigger>
                 <TabsTrigger value="solution" className="rounded-none">Solution</TabsTrigger>
                 <TabsTrigger value="tips" className="rounded-none">Tips</TabsTrigger>
               </TabsList>
 
-              <div className="tab-content flex-1 overflow-auto">
-                <TabsContent value="task" className="m-0 p-6 h-full">
-                  <div className="question-content space-y-4">
-                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-                        <BookOpen className="h-5 w-5" />
-                        Task Description
-                      </h3>
-                      <div className="text-blue-800 whitespace-pre-line leading-relaxed">
-                        {currentQuestion.task}
+              <div className="tabs-content-container flex-1 overflow-hidden">
+                <TabsContent value="task" className="tabs-content-item tab-content m-0 h-full overflow-y-auto">
+                  <div className="p-6">
+                    <div className="question-content space-y-4">
+                      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                          <BookOpen className="h-5 w-5" />
+                          Task Description
+                        </h3>
+                        <div className="text-blue-800 whitespace-pre-line leading-relaxed">
+                          {currentQuestion.task}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </TabsContent>
 
-                <TabsContent value="environment" className="m-0 p-6 h-full">
-                  <div className="question-content space-y-4">
-                    <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                      <h3 className="font-semibold text-green-900 mb-3 flex items-center gap-2">
-                        <Server className="h-5 w-5" />
-                        Environment Details
-                      </h3>
-                      <div className="text-green-800 whitespace-pre-line leading-relaxed">
-                        {currentQuestion.environment}
+                <TabsContent value="environment" className="tabs-content-item tab-content m-0 h-full overflow-y-auto">
+                  <div className="p-6">
+                    <div className="question-content space-y-4">
+                      <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                        <h3 className="font-semibold text-green-900 mb-3 flex items-center gap-2">
+                          <Server className="h-5 w-5" />
+                          Environment Details
+                        </h3>
+                        <div className="text-green-800 whitespace-pre-line leading-relaxed">
+                          {currentQuestion.environment}
+                        </div>
                       </div>
+                      
+                      {currentQuestion.preparation && (
+                        <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                          <h3 className="font-semibold text-yellow-900 mb-3">Preparation Steps</h3>
+                          <div className="text-yellow-800 whitespace-pre-line leading-relaxed">
+                            {currentQuestion.preparation}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    
-                    {currentQuestion.preparation && (
-                      <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                        <h3 className="font-semibold text-yellow-900 mb-3">Preparation Steps</h3>
-                        <div className="text-yellow-800 whitespace-pre-line leading-relaxed">
-                          {currentQuestion.preparation}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </TabsContent>
 
-                <TabsContent value="solution" className="m-0 p-6 h-full">
-                  <div className="code-block p-4 rounded-lg">
-                    <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
-                      <Settings className="h-5 w-5" />
-                      Step-by-Step Solution
-                    </h3>
-                    <pre className="text-sm text-green-400 whitespace-pre-wrap font-mono overflow-x-auto leading-relaxed">
-                      {currentQuestion.steps}
-                    </pre>
+                <TabsContent value="solution" className="tabs-content-item tab-content m-0 h-full overflow-y-auto">
+                  <div className="p-6">
+                    <div className="code-block p-4 rounded-lg">
+                      <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+                        <Settings className="h-5 w-5" />
+                        Step-by-Step Solution
+                      </h3>
+                      <pre className="text-sm text-green-400 whitespace-pre-wrap font-mono overflow-x-auto leading-relaxed">
+                        {currentQuestion.steps}
+                      </pre>
+                    </div>
                   </div>
                 </TabsContent>
 
-                <TabsContent value="tips" className="m-0 p-6 h-full">
-                  <div className="question-content space-y-4">
-                    {currentQuestion.diagram && (
-                      <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                        <h3 className="font-semibold text-purple-900 mb-3 flex items-center gap-2">
-                          <Network className="h-5 w-5" />
-                          Architecture Diagram
-                        </h3>
-                        <div className="text-purple-800 whitespace-pre-line leading-relaxed font-mono text-xs">
-                          {currentQuestion.diagram}
+                <TabsContent value="tips" className="tabs-content-item tab-content m-0 h-full overflow-y-auto">
+                  <div className="p-6">
+                    <div className="question-content space-y-4">
+                      {currentQuestion.diagram && (
+                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                          <h3 className="font-semibold text-purple-900 mb-3 flex items-center gap-2">
+                            <Network className="h-5 w-5" />
+                            Architecture Diagram
+                          </h3>
+                          <div className="text-purple-800 whitespace-pre-line leading-relaxed font-mono text-xs">
+                            {currentQuestion.diagram}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    
-                    {currentQuestion.tips && (
-                      <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                        <h3 className="font-semibold text-yellow-900 mb-3 flex items-center gap-2">
-                          <Wrench className="h-5 w-5" />
-                          Exam Tips & Best Practices
-                        </h3>
-                        <div className="text-yellow-800 whitespace-pre-line leading-relaxed">
-                          {currentQuestion.tips}
+                      )}
+                      
+                      {currentQuestion.tips && (
+                        <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                          <h3 className="font-semibold text-yellow-900 mb-3 flex items-center gap-2">
+                            <Wrench className="h-5 w-5" />
+                            Exam Tips & Best Practices
+                          </h3>
+                          <div className="text-yellow-800 whitespace-pre-line leading-relaxed">
+                            {currentQuestion.tips}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </TabsContent>
               </div>
