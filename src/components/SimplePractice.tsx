@@ -20,7 +20,14 @@ interface Question {
 }
 
 const SimplePractice: React.FC = () => {
-  const [questions] = useState<Question[]>(questionsData);
+  // Sort questions by ID (Q1, Q2, Q3, etc.)
+  const [questions] = useState<Question[]>(
+    questionsData.sort((a, b) => {
+      const aNum = parseInt(a.id.replace('Q', ''));
+      const bNum = parseInt(b.id.replace('Q', ''));
+      return aNum - bNum;
+    })
+  );
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [completedQuestions, setCompletedQuestions] = useState<Set<string>>(new Set());
   const [environmentReady, setEnvironmentReady] = useState<boolean>(false);
