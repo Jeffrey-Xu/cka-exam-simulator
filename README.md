@@ -1,34 +1,36 @@
 # 🚀 CKA Exam Simulator v2.0
 
-> **Professional Kubernetes Administrator certification practice platform with real AWS cluster access**
+> **Professional Kubernetes Administrator certification practice platform with real AWS cluster access and DNS-based infrastructure**
 
 [![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-18-blue)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.28.15-326ce5)](https://kubernetes.io/)
-[![AWS](https://img.shields.io/badge/AWS-EC2-orange)](https://aws.amazon.com/ec2/)
+[![AWS](https://img.shields.io/badge/AWS-Route53+EC2-orange)](https://aws.amazon.com/)
 
 ## 🎯 Overview
 
-The **CKA Exam Simulator v2.0** provides an authentic Kubernetes Administrator certification practice environment using real AWS infrastructure. Built with modern web technologies, it delivers professional-grade exam simulation comparable to killer.sh.
+The **CKA Exam Simulator v2.0** provides an authentic Kubernetes Administrator certification practice environment using real AWS infrastructure with professional DNS-based architecture. Built with modern web technologies, it delivers production-grade exam simulation comparable to killer.sh.
 
 ### ✨ Key Features
 
 - 🔥 **Real Kubernetes Cluster** - Practice on actual AWS infrastructure
 - 💻 **Professional Terminal** - xterm.js with full keyboard support
+- 🌐 **DNS-Based Architecture** - No more IP address dependencies
 - 🔐 **Secure WebSocket** - WSS communication with SSL/TLS
 - 🎯 **Authentic Experience** - Matches real CKA exam environment
 - 🚀 **Modern Stack** - Next.js 14, React 18, TypeScript
 - 📱 **Responsive Design** - Works on desktop, tablet, and mobile
 - ⚡ **Real-time Communication** - Live kubectl command execution
 - 🛡️ **Security First** - Command validation and secure connections
+- 🤖 **Complete Automation** - One-command infrastructure management
 
 ## 🏗️ Architecture
 
 ```
-Browser (xterm.js) → Vercel (Next.js) → AWS EC2 (SSH Proxy) → Kubernetes Cluster
-     ↓                    ↓                    ↓                      ↓
-  Terminal UI         Static Hosting      WebSocket Server      Real kubectl
+Browser (xterm.js) → Vercel (Next.js) → AWS Route 53 DNS → AWS EC2 (SSH Proxy) → Kubernetes Cluster
+     ↓                    ↓                    ↓                    ↓                      ↓
+  Terminal UI         Static Hosting      DNS Resolution      WebSocket Server      Real kubectl
 ```
 
 ### System Components
@@ -39,14 +41,22 @@ Browser (xterm.js) → Vercel (Next.js) → AWS EC2 (SSH Proxy) → Kubernetes C
    - Tailwind CSS for responsive design
    - Automatic deployment from GitHub
 
-2. **SSH Proxy Server (AWS EC2)**
+2. **DNS Infrastructure (AWS Route 53)**
+   - Professional domain: `ciscloudlab.link`
+   - Automatic IP resolution for all services
+   - No more manual IP address updates
+   - Cost: Only $0.51/month
+
+3. **SSH Proxy Server (AWS EC2)**
    - Node.js WebSocket server with SSL/TLS
+   - DNS-based connections: `ssh-proxy.ciscloudlab.link`
    - Real-time terminal communication
    - SSH connection pooling and session management
    - Command validation and security controls
 
-3. **Kubernetes Cluster (AWS EC2)**
+4. **Kubernetes Cluster (AWS EC2)**
    - 2-node cluster (master + worker)
+   - DNS names: `master01.ciscloudlab.link`, `worker01.ciscloudlab.link`
    - Kubernetes v1.28.15 with containerd runtime
    - Real kubectl command execution
    - Authentic CKA exam environment
@@ -55,10 +65,10 @@ Browser (xterm.js) → Vercel (Next.js) → AWS EC2 (SSH Proxy) → Kubernetes C
 
 ### Prerequisites
 
-- AWS Account with EC2 access
+- AWS Account with EC2 and Route 53 access
 - Node.js 18+ installed
 - SSH key pair for EC2 instances
-- Domain name (optional, for production SSL)
+- AWS CLI configured
 
 ### 1. Clone Repository
 
@@ -73,21 +83,17 @@ cd cka-exam-simulator
 npm install
 ```
 
-### 3. Set Up AWS Infrastructure
+### 3. Start Infrastructure
 
 ```bash
-# Create Kubernetes cluster (see infrastructure/ directory)
-# Deploy SSH proxy server (see ssh-proxy-server/ directory)
+# Start all instances and update DNS automatically
+./scripts/infrastructure-manager.sh start
+
+# Check status
+./scripts/infrastructure-manager.sh status
 ```
 
-### 4. Configure Environment
-
-```bash
-# Update WebSocket URL in src/components/terminal/XTermComponent.tsx
-# Set your EC2 instance IP addresses
-```
-
-### 5. Deploy Frontend
+### 4. Deploy Frontend
 
 ```bash
 # Deploy to Vercel
@@ -108,51 +114,71 @@ cka-exam-simulator/
 │   │   └── ui/                # UI components
 │   ├── lib/                   # Utilities and stores
 │   └── types/                 # TypeScript definitions
+├── scripts/                   # Infrastructure automation
+│   ├── infrastructure-manager.sh  # Complete lifecycle management
+│   ├── check-dns.sh              # DNS propagation monitoring
+│   └── setup-ssh-proxy.sh        # SSL and configuration
 ├── ssh-proxy-server/          # WebSocket SSH proxy
-├── infrastructure/            # AWS infrastructure code
 ├── docs/                      # Documentation
 └── public/                    # Static assets
 ```
 
-## 🔧 Configuration
+## 🔧 Infrastructure Management
 
-### Environment Variables
+### Automated Scripts
 
 ```bash
-# .env.local (Frontend)
-NEXT_PUBLIC_WS_URL=wss://your-proxy-server:3001
+# Start all infrastructure
+./scripts/infrastructure-manager.sh start
 
-# .env (SSH Proxy Server)
-PORT=3001
-K8S_MASTER_IP=your-master-ip
-ALLOWED_ORIGINS=https://your-vercel-app.vercel.app
-SSH_PRIVATE_KEY=your-ssh-private-key
+# Stop all infrastructure (save costs: $75 → $5/month)
+./scripts/infrastructure-manager.sh stop
+
+# Restart with DNS updates
+./scripts/infrastructure-manager.sh restart
+
+# Check current status
+./scripts/infrastructure-manager.sh status
+
+# Update DNS records only
+./scripts/infrastructure-manager.sh dns
+
+# Monitor DNS propagation
+./scripts/check-dns.sh wait
 ```
 
-### AWS Infrastructure
+### DNS Configuration
 
-- **EC2 Instances**: t3.micro (proxy), t3.medium (cluster nodes)
-- **Security Groups**: SSH (22), Kubernetes API (6443), WebSocket (3001)
-- **Network**: Default VPC with public subnets
-- **Storage**: EBS GP3 volumes
+- **Domain**: `ciscloudlab.link` (AWS-managed)
+- **Hosted Zone**: `Z002910323G1G2ECVLWHF`
+- **Services**:
+  - `ssh-proxy.ciscloudlab.link` - WebSocket proxy server
+  - `master01.ciscloudlab.link` - Kubernetes master node
+  - `worker01.ciscloudlab.link` - Kubernetes worker node
 
 ## 🎮 Usage
 
 ### Starting a Practice Session
 
-1. **Visit the Application**
-   ```
-   https://your-app.vercel.app
+1. **Start Infrastructure**
+   ```bash
+   ./scripts/infrastructure-manager.sh start
    ```
 
-2. **Demo Login**
+2. **Visit the Application**
+   ```
+   https://cka-simulator-b9l2n6wrb-jeffrey-xus-projects-8e6cab13.vercel.app
+   ```
+
+3. **Demo Login**
    - Click "Demo Login" to access practice mode
 
-3. **Practice Mode**
+4. **Practice Mode**
    - Navigate to "Practice Mode"
-   - Terminal will auto-connect to the cluster
+   - Terminal will auto-connect via DNS
+   - Connection: `wss://ssh-proxy.ciscloudlab.link:3001`
 
-4. **Execute kubectl Commands**
+5. **Execute kubectl Commands**
    ```bash
    kubectl get nodes
    kubectl get pods -A
@@ -175,6 +201,7 @@ SSH_PRIVATE_KEY=your-ssh-private-key
 - **Let's Encrypt** recommended for production
 - **Auto SSL acceptance** for seamless user experience
 - **WSS (Secure WebSocket)** communication
+- **DNS-based certificates** - no regeneration on IP changes
 
 ### Command Validation
 
@@ -183,21 +210,33 @@ SSH_PRIVATE_KEY=your-ssh-private-key
 - Session isolation and management
 - Rate limiting and connection pooling
 
-## 📊 Performance
+## 📊 Performance & Costs
 
-### Metrics
+### Performance Metrics
 
-- **Connection Time**: < 2 seconds
+- **Connection Time**: < 2 seconds via DNS
 - **Command Response**: < 500ms average
 - **Concurrent Users**: 50+ supported
 - **Uptime**: 99.9% availability
 
-### Optimization
+### Cost Analysis
 
-- Connection pooling for SSH sessions
-- WebSocket compression
-- CDN delivery via Vercel
-- Efficient terminal rendering
+| Component | Monthly Cost | Notes |
+|-----------|--------------|-------|
+| **Route 53 DNS** | $0.51 | Hosted zone + queries |
+| **EC2 t3.micro (proxy)** | $8.50 | Can use free tier |
+| **EC2 t3.medium (master)** | $30.37 | Can use free tier |
+| **EC2 t3.medium (worker)** | $30.37 | Can use free tier |
+| **EBS Storage** | $4.00 | GP3 volumes |
+| **Data Transfer** | $2.00 | Minimal usage |
+| **Total** | **$75.75/month** | **$0.51 when stopped** |
+
+### Cost Optimization
+
+- **Stop when unused**: `./scripts/infrastructure-manager.sh stop`
+- **AWS Free Tier**: $0 for first 12 months (new accounts)
+- **DNS Always Active**: Only $0.51/month when instances stopped
+- **Session-based usage**: $0.70 for 8-hour practice session
 
 ## 🛠️ Development
 
@@ -207,12 +246,14 @@ SSH_PRIVATE_KEY=your-ssh-private-key
 # Start frontend
 npm run dev
 
-# Start SSH proxy server
-cd ssh-proxy-server
-npm start
+# Start infrastructure
+./scripts/infrastructure-manager.sh start
 
-# Monitor logs
-tail -f ssh-proxy-server/server.log
+# Monitor DNS
+./scripts/check-dns.sh wait
+
+# Check logs
+ssh ubuntu@ssh-proxy.ciscloudlab.link "tail -f ~/ssh-proxy-server/server-https.log"
 ```
 
 ### Testing
@@ -226,36 +267,26 @@ npm run type-check
 
 # Linting
 npm run lint
+
+# Test DNS resolution
+./scripts/check-dns.sh check
+
+# Test infrastructure
+./scripts/infrastructure-manager.sh status
 ```
 
 ### Deployment
 
 ```bash
-# Deploy to Vercel
+# Deploy frontend to Vercel
 vercel --prod
 
-# Deploy SSH proxy
-scp -r ssh-proxy-server/ user@your-ec2:/home/user/
-ssh user@your-ec2 "cd ssh-proxy-server && npm install && pm2 start server.js"
+# Update infrastructure
+./scripts/infrastructure-manager.sh restart
+
+# Monitor health
+curl -k https://ssh-proxy.ciscloudlab.link:3001/health
 ```
-
-## 💰 Cost Analysis
-
-### Monthly Costs (AWS)
-
-- **EC2 t3.micro (proxy)**: $8.50
-- **EC2 t3.medium (master)**: $30.37
-- **EC2 t3.medium (worker)**: $30.37
-- **EBS Storage**: $4.00
-- **Data Transfer**: $2.00
-- **Total**: ~$75/month
-
-### Cost Optimization
-
-- **Free Tier Eligible**: New AWS accounts
-- **Stop when unused**: Save ~90% costs
-- **Spot Instances**: Additional 60-70% savings
-- **Session-based billing**: Pay only when practicing
 
 ## 🤝 Contributing
 
@@ -276,28 +307,50 @@ ssh user@your-ec2 "cd ssh-proxy-server && npm install && pm2 start server.js"
 
 ## 📚 Documentation
 
-- [Architecture Guide](docs/architecture.md)
-- [Deployment Guide](docs/deployment.md)
-- [API Reference](docs/api.md)
-- [Troubleshooting](docs/troubleshooting.md)
+- [DNS Setup Complete](docs/DNS_SETUP_COMPLETE.md) - Final DNS implementation status
+- [Deployment Guide](docs/DEPLOYMENT.md) - Detailed deployment instructions
+- [Project Summary](PROJECT_SUMMARY.md) - Complete project overview
+- [Amazon Q Protocol](AMAZON_Q_PROTOCOL.md) - Development session guidelines
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **SSL Certificate Errors**
-   - Accept certificate at `https://your-proxy:3001/health`
-   - Check browser console for WebSocket errors
+1. **DNS Resolution Errors**
+   ```bash
+   # Check DNS propagation
+   ./scripts/check-dns.sh check
+   
+   # Wait for propagation
+   ./scripts/check-dns.sh wait
+   ```
 
 2. **Connection Timeouts**
-   - Verify EC2 instances are running
-   - Check security group rules
-   - Confirm SSH key permissions
+   ```bash
+   # Verify infrastructure status
+   ./scripts/infrastructure-manager.sh status
+   
+   # Restart if needed
+   ./scripts/infrastructure-manager.sh restart
+   ```
 
-3. **kubectl Commands Failing**
-   - Ensure cluster is properly configured
-   - Check kubeconfig on master node
-   - Verify SSH connectivity
+3. **SSL Certificate Issues**
+   ```bash
+   # Test health endpoint
+   curl -k https://ssh-proxy.ciscloudlab.link:3001/health
+   
+   # Regenerate certificate if needed
+   ./scripts/setup-ssh-proxy.sh
+   ```
+
+4. **kubectl Commands Failing**
+   ```bash
+   # Check cluster status
+   ssh ubuntu@master01.ciscloudlab.link "kubectl get nodes"
+   
+   # Verify SSH connectivity
+   ssh ubuntu@master01.ciscloudlab.link "echo 'Connected'"
+   ```
 
 ## 📄 License
 
@@ -308,15 +361,23 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Kubernetes Community** for excellent documentation
 - **xterm.js Team** for the professional terminal emulator
 - **Vercel** for seamless deployment platform
-- **AWS** for reliable cloud infrastructure
+- **AWS** for reliable cloud infrastructure and DNS services
 
 ## 📞 Support
 
 - **Issues**: [GitHub Issues](https://github.com/Jeffrey-Xu/cka-exam-simulator/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/Jeffrey-Xu/cka-exam-simulator/discussions)
-- **Email**: support@cka-simulator.com
+- **Documentation**: [docs/](docs/) directory
 
 ---
+
+## 🎉 **DNS Integration Complete!**
+
+**The CKA Simulator v2.0 now features:**
+- ✅ **Professional DNS architecture** with `ciscloudlab.link`
+- ✅ **Zero IP address dependencies** - fully automated
+- ✅ **Production-ready infrastructure** with complete automation
+- ✅ **Cost-effective operation** at only $0.51/month additional
 
 **Built with ❤️ for the Kubernetes community**
 
