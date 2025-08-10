@@ -2,7 +2,7 @@
 
 import { useAuthStore } from '@/lib/store'
 import { redirect } from 'next/navigation'
-import SimplePractice from '@/components/SimplePractice'
+import ExamPractice from '@/components/ExamPractice'
 
 export default function PracticePage() {
   const { isAuthenticated } = useAuthStore()
@@ -11,5 +11,5 @@ export default function PracticePage() {
     redirect('/')
   }
 
-  return <SimplePractice />
+  return <ExamPractice />
 }
