@@ -71,7 +71,7 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
     xtermRef.current = terminal
     fitAddonRef.current = fitAddon
 
-    // Auto-accept SSL certificate and connect
+    // Auto-accept SSL and connect
     autoAcceptSSLAndConnect(terminal)
 
     // Handle input
@@ -95,11 +95,11 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
   }, [sessionId])
 
   const autoAcceptSSLAndConnect = async (terminal: XTerm) => {
-    terminal.writeln('\x1b[33m[Initializing secure connection...]\x1b[0m')
+    terminal.writeln('\x1b[33m[Initializing secure connection to ssh-proxy.ciscloudlab.link...]\x1b[0m')
     
     try {
       // First, try to auto-accept the SSL certificate by making an HTTPS request
-      const response = await fetch('https://34.201.132.19:3001/health', {
+      const response = await fetch('https://ssh-proxy.ciscloudlab.link:3001/health', {
         method: 'GET',
         mode: 'no-cors', // This bypasses CORS but allows the SSL handshake
       }).catch(() => null)
@@ -117,16 +117,16 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
   }
 
   const connectWebSocket = (terminal: XTerm) => {
-    // Use WSS (secure WebSocket) to connect to HTTPS server
-    const wsUrl = 'wss://34.201.132.19:3001'
+    // Use correct DNS name - ciscloudlab.link (not cislab.link)
+    const wsUrl = 'wss://ssh-proxy.ciscloudlab.link:3001'
     
     try {
-      // Create WebSocket with additional options to handle self-signed certificates
+      // Create WebSocket with DNS-based URL
       const ws = new WebSocket(wsUrl)
       wsRef.current = ws
 
       ws.onopen = () => {
-        console.log('WebSocket connected to SSH proxy (WSS)')
+        console.log('WebSocket connected to SSH proxy via DNS (ciscloudlab.link)')
         setConnectionStatus('connected')
         setSslAccepted(true)
         showWelcomeMessage(terminal)
@@ -189,7 +189,7 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
     
     // Open the health endpoint in a new window to accept SSL certificate
     const sslWindow = window.open(
-      'https://34.201.132.19:3001/health',
+      'https://ssh-proxy.ciscloudlab.link:3001/health',
       'ssl-accept',
       'width=600,height=400,scrollbars=yes,resizable=yes'
     )
@@ -250,11 +250,12 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
     terminal.writeln('\x1b[32m│                 CKA Exam Simulator v2.0                    │\x1b[0m')
     terminal.writeln('\x1b[32m│                                                             │\x1b[0m')
     terminal.writeln('\x1b[32m│  🚀 Connected to Real Kubernetes Cluster                   │\x1b[0m')
-    terminal.writeln('\x1b[32m│  🔐 Secure WebSocket (WSS) via SSH proxy                   │\x1b[0m')
-    terminal.writeln('\x1b[32m│  ✅ SSL Certificate Auto-Accepted                          │\x1b[0m')
+    terminal.writeln('\x1b[32m│  🔐 Secure WebSocket (WSS) via DNS                         │\x1b[0m')
+    terminal.writeln('\x1b[32m│  🌐 AWS-managed DNS (ciscloudlab.link)                     │\x1b[0m')
     terminal.writeln('\x1b[32m│                                                             │\x1b[0m')
-    terminal.writeln('\x1b[32m│  Master: 100.27.28.215 | Worker: 54.145.132.72            │\x1b[0m')
-    terminal.writeln('\x1b[32m│  Proxy: 34.201.132.19:3001 (HTTPS/WSS)                    │\x1b[0m')
+    terminal.writeln('\x1b[32m│  Master: master01.ciscloudlab.link                         │\x1b[0m')
+    terminal.writeln('\x1b[32m│  Worker: worker01.ciscloudlab.link                         │\x1b[0m')
+    terminal.writeln('\x1b[32m│  Proxy:  ssh-proxy.ciscloudlab.link:3001                  │\x1b[0m')
     terminal.writeln('\x1b[32m│                                                             │\x1b[0m')
     terminal.writeln('\x1b[32m│  Type kubectl commands to interact with the cluster       │\x1b[0m')
     terminal.writeln('\x1b[32m│  Example: kubectl get nodes                                │\x1b[0m')
@@ -314,7 +315,7 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
 
   const getStatusText = () => {
     switch (connectionStatus) {
-      case 'connected': return 'Connected (WSS)'
+      case 'connected': return 'Connected (DNS/WSS)'
       case 'connecting': return 'Connecting...'
       case 'error': return sslAccepted ? 'Connection Error' : 'SSL Setup Required'
       default: return 'Disconnected'
@@ -325,7 +326,7 @@ export default function XTermComponent({ sessionId, onCommand }: XTermComponentP
     <div className="flex flex-col h-full">
       {/* Connection Status */}
       <div className="bg-gray-800 text-white px-4 py-1 text-xs flex items-center justify-between">
-        <span>SSH Proxy: 34.201.132.19:3001 (HTTPS/WSS)</span>
+        <span>SSH Proxy: ssh-proxy.ciscloudlab.link:3001 (AWS DNS/WSS)</span>
         <div className="flex items-center space-x-2">
           <div className={`w-2 h-2 rounded-full ${getStatusColor()}`}></div>
           <span>{getStatusText()}</span>
