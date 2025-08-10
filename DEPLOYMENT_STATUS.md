@@ -1,10 +1,22 @@
-# 🚀 CKA Simulator v3.0 - Killer.sh-Inspired Professional Layout
+# 🚀 CKA Simulator v3.1 - Enhanced UX with Scrolling Fix
 
 ## ✅ Successfully Deployed!
 
 **Latest Deployment**: https://cka-simulator-rkw8iffsn-jeffrey-xus-projects-8e6cab13.vercel.app
 
-## 🎯 What's New in v3.0
+## 🎯 What's New in v3.1
+
+### 📜 Fixed Scrolling in Question Panels
+- **Proper Scrolling** - All tabs (Task, Environment, Solution, Tips) now scroll correctly
+- **Custom Scrollbars** - Professional styling with smooth scrolling behavior
+- **Long Content Support** - Handles extensive question content and code blocks
+- **Responsive Layout** - Maintains scrolling on all screen sizes
+
+### 🔄 Enhanced Terminal Connection Stability
+- **Session Persistence** - Maintains terminal state across network interruptions
+- **Heartbeat System** - 30-second ping-pong to keep connections alive
+- **Smart Reconnection** - Exponential backoff with up to 10 retry attempts
+- **Better Error Handling** - Clear feedback during connection issues
 
 ### 🏆 Professional Exam Interface (Killer.sh-Inspired)
 - **Split-Screen Layout** - Left panel (questions) + Right panel (terminal)
@@ -84,5 +96,5 @@ This simplified version removes complex features and focuses on:
 The simplified practice module is now live and ready for CKA exam preparation!
 
 ---
-*Updated: 2025-08-10T08:25:00Z*
-*Deployment: Production Ready with Killer.sh Layout ✅*
+*Updated: 2025-08-10T08:40:00Z*
+*Deployment: Production Ready with Enhanced UX ✅*
